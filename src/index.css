@@ -6,40 +6,40 @@
 
 @layer base {
   :root {
-    /* Base Colors */
-    --background: 350 10% 98%;
-    --foreground: 340 15% 15%;
+    /* Base Colors - Light theme */
+    --background: 0 0% 98%;
+    --foreground: 220 20% 15%;
 
     /* Card Colors */
     --card: 0 0% 100%;
-    --card-foreground: 340 15% 15%;
+    --card-foreground: 220 20% 15%;
 
     /* Interactive Elements */
     --popover: 0 0% 100%;
-    --popover-foreground: 340 15% 15%;
+    --popover-foreground: 220 20% 15%;
 
-    /* Primary Palette - Rose Gold Theme */
-    --primary: 340 65% 55%;
+    /* Primary Palette - Salon Assured Brand Pink */
+    --primary: 340 45% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 345 70% 70%;
+    --primary-glow: 340 50% 65%;
     
-    /* Secondary Palette - Soft Purple */
-    --secondary: 270 25% 92%;
-    --secondary-foreground: 270 15% 25%;
-    --secondary-accent: 270 40% 75%;
+    /* Secondary Palette - Professional Navy */
+    --secondary: 220 25% 92%;
+    --secondary-foreground: 220 20% 25%;
+    --secondary-accent: 220 30% 75%;
     
-    /* Luxury Gold Accents */
-    --gold: 45 90% 60%;
-    --gold-light: 50 85% 85%;
-    --gold-dark: 35 75% 45%;
+    /* Luxury Gold Accents - Muted */
+    --gold: 40 70% 55%;
+    --gold-light: 45 65% 80%;
+    --gold-dark: 35 60% 40%;
 
     /* Muted Tones */
-    --muted: 320 15% 95%;
-    --muted-foreground: 340 10% 45%;
+    --muted: 220 15% 95%;
+    --muted-foreground: 220 10% 45%;
 
     /* Accent Colors */
-    --accent: 315 35% 88%;
-    --accent-foreground: 340 20% 20%;
+    --accent: 220 20% 88%;
+    --accent-foreground: 220 25% 20%;
 
     /* Status Colors */
     --destructive: 0 84.2% 60.2%;
@@ -48,15 +48,15 @@
     --success-foreground: 0 0% 100%;
 
     /* UI Elements */
-    --border: 320 20% 90%;
-    --input: 320 20% 94%;
-    --ring: 340 65% 55%;
+    --border: 220 15% 90%;
+    --input: 220 15% 94%;
+    --ring: 340 45% 55%;
 
     /* Border Radius */
     --radius: 0.75rem;
     
-    /* Gradients - Salon Theme */
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 50%, hsl(var(--gold)) 100%);
+    /* Gradients - Salon Assured Brand */
+    --gradient-hero: linear-gradient(135deg, hsl(220 35% 15%) 0%, hsl(220 25% 25%) 50%, hsl(340 45% 55%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
     --gradient-accent: linear-gradient(90deg, hsl(var(--secondary-accent)) 0%, hsl(var(--primary-glow)) 100%);
     --gradient-gold: linear-gradient(135deg, hsl(var(--gold-light)) 0%, hsl(var(--gold)) 50%, hsl(var(--gold-dark)) 100%);
@@ -82,45 +82,45 @@
   }
 
   .dark {
-    /* Dark mode with elegant salon theme */
-    --background: 340 20% 8%;
-    --foreground: 350 15% 92%;
+    /* Dark mode - Salon Assured Brand Navy Theme */
+    --background: 220 35% 15%;
+    --foreground: 0 0% 95%;
 
-    --card: 340 15% 12%;
-    --card-foreground: 350 10% 90%;
+    --card: 220 30% 18%;
+    --card-foreground: 0 0% 90%;
 
-    --popover: 340 15% 12%;
-    --popover-foreground: 350 10% 90%;
+    --popover: 220 30% 18%;
+    --popover-foreground: 0 0% 90%;
 
-    --primary: 345 70% 65%;
-    --primary-foreground: 340 20% 8%;
-    --primary-glow: 350 75% 75%;
+    --primary: 340 50% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 340 55% 70%;
 
-    --secondary: 270 15% 20%;
-    --secondary-foreground: 270 10% 85%;
-    --secondary-accent: 270 35% 60%;
+    --secondary: 220 20% 25%;
+    --secondary-foreground: 0 0% 85%;
+    --secondary-accent: 220 25% 45%;
 
-    --gold: 50 80% 70%;
-    --gold-light: 55 70% 80%;
-    --gold-dark: 40 70% 50%;
+    --gold: 45 65% 65%;
+    --gold-light: 50 60% 75%;
+    --gold-dark: 35 55% 45%;
 
-    --muted: 340 10% 15%;
-    --muted-foreground: 340 8% 60%;
+    --muted: 220 25% 22%;
+    --muted-foreground: 220 10% 60%;
 
-    --accent: 315 25% 25%;
-    --accent-foreground: 315 15% 85%;
+    --accent: 220 20% 30%;
+    --accent-foreground: 0 0% 85%;
 
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
     --success: 140 60% 50%;
     --success-foreground: 0 0% 100%;
 
-    --border: 340 15% 20%;
-    --input: 340 15% 18%;
-    --ring: 345 70% 65%;
+    --border: 220 25% 25%;
+    --input: 220 25% 22%;
+    --ring: 340 50% 60%;
 
-    /* Dark mode gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 50%, hsl(var(--gold)) 100%);
+    /* Dark mode gradients - Brand aligned */
+    --gradient-hero: linear-gradient(135deg, hsl(220 35% 15%) 0%, hsl(220 25% 25%) 50%, hsl(340 50% 60%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
     --gradient-accent: linear-gradient(90deg, hsl(var(--secondary-accent)) 0%, hsl(var(--primary-glow)) 100%);
     --gradient-gold: linear-gradient(135deg, hsl(var(--gold-light)) 0%, hsl(var(--gold)) 50%, hsl(var(--gold-dark)) 100%);
