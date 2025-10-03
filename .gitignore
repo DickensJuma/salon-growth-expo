@@ -10,6 +10,12 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+# Allow .env.local for environment variables
+!.env.local
+
+.env
+
+# Ignore other local files
 *.local
 
 # Editor directories and files

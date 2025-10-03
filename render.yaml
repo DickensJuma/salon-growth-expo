@@ -1,0 +1,36 @@
+# Render Deployment Configuration
+# Place this file in your repository root
+
+services:
+  # Backend API Service
+  - type: web
+    name: salon-backend
+    runtime: node
+    region: oregon  # Choose: oregon, frankfurt, singapore
+    plan: free  # Change to 'starter' ($7/mo) for production
+    branch: main
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    
+    # Auto-deploy on git push
+    autoDeploy: true
+    
+    # Environment variables (set these in Render Dashboard for security)
+    envVars:
+      - key: NODE_ENV
+        value: production
+      
+      - key: PORT
+        value: 3000
+      
+      # These should be set in Render dashboard (not here for security):
+      # - MONGODB_URI
+      # - PAYSTACK_SECRET_KEY
+      # - PAYSTACK_PUBLIC_KEY
+      # - BREVO_SMTP_HOST
+      # - BREVO_SMTP_PORT
+      # - BREVO_SMTP_USER
+      # - BREVO_SMTP_PASS
+      # - MAIL_FROM
