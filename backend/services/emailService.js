@@ -480,9 +480,13 @@ async function sendPaymentConfirmation(data) {
         data.eventTitle
       }\nDate: ${new Date(data.eventDate).toLocaleDateString()}\nName: ${
         data.firstName
-      } ${data.lastName}\nRegistration ID: ${
-        data.registrationId
-      }\nAmount Paid: KES ${data.amount}`,
+      } ${data.lastName}\nRegistration ID: ${data.registrationId}${
+        data.totalAmount ? `\nTotal Amount: KES ${data.totalAmount}` : ""
+      }\nAmount Paid: KES ${data.amount}${
+        data.remainingBalance && data.remainingBalance > 0
+          ? `\nRemaining Balance: KES ${data.remainingBalance}\n** PARTIAL PAYMENT - Balance pending **`
+          : ""
+      }`,
     });
 
     return await sendWithRetry({

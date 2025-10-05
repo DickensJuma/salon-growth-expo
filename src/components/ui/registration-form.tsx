@@ -37,14 +37,20 @@ export const RegistrationForm = () => {
   const { toast } = useToast();
 
   // Form state
-  const [activeTab, setActiveTab] = useState<"details" | "payment" | "success">("details");
+  const [activeTab, setActiveTab] = useState<"details" | "payment" | "success">(
+    "details"
+  );
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationId, setRegistrationId] = useState<string | null>(null);
-  const [selectedTicket, setSelectedTicket] = useState<'standard' | 'premium' | 'vip'>('standard');
+  const [selectedTicket, setSelectedTicket] = useState<
+    "standard" | "premium" | "vip"
+  >("standard");
   const [events, setEvents] = useState<Event[]>([]);
-  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [selectedEventId, setSelectedEventId] = useState<string>("");
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [paymentType, setPaymentType] = useState<"full" | "partial">("full");
+  const [partialAmount, setPartialAmount] = useState<string>("");
   const [formData, setFormData] = useState<FormData>({
     businessName: "",
     ownerName: "",
@@ -57,7 +63,7 @@ export const RegistrationForm = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await fetch('/api/events');
+        const response = await fetch("/api/events");
         const data = await response.json();
 
         if (data.success && data.events.length > 0) {
@@ -65,7 +71,7 @@ export const RegistrationForm = () => {
           setSelectedEventId(data.events[0].id); // Select first event by default
         }
       } catch (error) {
-        console.error('Failed to fetch events:', error);
+        console.error("Failed to fetch events:", error);
         toast({
           title: "Error",
           description: "Failed to load available events.",
@@ -97,7 +103,7 @@ export const RegistrationForm = () => {
 
   // Validate form
   const validateForm = () => {
-    const required = ["businessName", "ownerName", "phone", "email", "location"];
+    const required = ["ownerName", "phone", "email"];
     for (const field of required) {
       if (!formData[field as keyof FormData].trim()) {
         return false;
@@ -136,10 +142,10 @@ export const RegistrationForm = () => {
       const timeoutId = setTimeout(() => controller.abort(), 15000);
       const requestData = {
         // Map frontend fields to backend expected fields
-        firstName: formData.ownerName.split(' ')[0] || formData.ownerName,
-        lastName: formData.ownerName.split(' ').slice(1).join(' ') || 'Unknown',
+        firstName: formData.ownerName.split(" ")[0] || formData.ownerName,
+        lastName: formData.ownerName.split(" ").slice(1).join(" ") || "Unknown",
         email: formData.email,
-        password: 'temp_' + Date.now(), // Temporary password, will be updated in production
+        password: "temp_" + Date.now(), // Temporary password, will be updated in production
         phone: formData.phone,
         businessName: formData.businessName,
         ownerName: formData.ownerName,
@@ -148,7 +154,7 @@ export const RegistrationForm = () => {
         amount: TICKET_TYPES[selectedTicket],
         eventId: selectedEventId, // Include the selected event ID
       };
-  
+
       const response = await fetch("/api/register", {
         method: "POST",
         headers: {
@@ -166,11 +172,15 @@ export const RegistrationForm = () => {
       try {
         responseData = responseText ? JSON.parse(responseText) : {};
       } catch {
-        throw new Error(`Server returned an invalid response (${response.status})`);
+        throw new Error(
+          `Server returned an invalid response (${response.status})`
+        );
       }
 
       if (!response.ok) {
-        throw new Error(responseData.message || "Failed to process registration");
+        throw new Error(
+          responseData.message || "Failed to process registration"
+        );
       }
       setRegistrationId(responseData.registrationId);
       setActiveTab("payment");
@@ -214,9 +224,7 @@ export const RegistrationForm = () => {
           <p className="text-lg">
             Thank you for registering for the Salon Growth Summit!
           </p>
-          <p>
-            We've sent a confirmation email to {formData.email}.
-          </p>
+          <p>We've sent a confirmation email to {formData.email}.</p>
           <p>We look forward to seeing you at the event!</p>
         </CardContent>
       </Card>
@@ -229,7 +237,13 @@ export const RegistrationForm = () => {
         <CardTitle>Register for the Business Summit</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab}   onValueChange={(val) => setActiveTab(val as "details" | "payment" | "success")} className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) =>
+            setActiveTab(val as "details" | "payment" | "success")
+          }
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="details">Registration Details</TabsTrigger>
             <TabsTrigger value="payment" disabled={activeTab !== "payment"}>
@@ -266,7 +280,9 @@ export const RegistrationForm = () => {
                     >
                       {events.map((event) => (
                         <option key={event.id} value={event.id}>
-                          {event.title} - {new Date(event.date).toLocaleDateString()} - KES {event.price}
+                          {event.title} -{" "}
+                          {new Date(event.date).toLocaleDateString()} - KES{" "}
+                          {event.price}
                         </option>
                       ))}
                     </select>
@@ -281,20 +297,24 @@ export const RegistrationForm = () => {
                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <h3 className="font-medium text-blue-900">Selected Event</h3>
                   <p className="text-blue-700">
-                    {events[0]?.title} - {events[0]?.date ? new Date(events[0].date).toLocaleDateString() : ''} - KES {events[0]?.price || 0}
+                    {events[0]?.title} -{" "}
+                    {events[0]?.date
+                      ? new Date(events[0].date).toLocaleDateString()
+                      : ""}{" "}
+                    - KES {events[0]?.price || 0}
                   </p>
                 </div>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="businessName">Business Name *</Label>
+                  <Label htmlFor="businessName">Business Name</Label>
                   <Input
                     id="businessName"
                     name="businessName"
+                    placeholder="Business Name (optional)"
                     value={formData.businessName}
                     onChange={handleInputChange}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -308,7 +328,7 @@ export const RegistrationForm = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email">Email Address *</Label>
                   <Input
                     id="email"
                     name="email"
@@ -330,19 +350,23 @@ export const RegistrationForm = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="location">Business Location *</Label>
+                  <Label htmlFor="location">Business Location</Label>
                   <Input
                     id="location"
                     name="location"
+                    placeholder="Business Location (optional)"
                     value={formData.location}
                     onChange={handleInputChange}
-                    required
                   />
                 </div>
               </div>
 
               <div className="pt-4">
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -363,13 +387,107 @@ export const RegistrationForm = () => {
           <TabsContent value="payment" className="pt-6" id="payment-section">
             {registrationId && (
               <div className="space-y-6">
-                <h3 className="text-lg font-medium">Complete Your Registration</h3>
+                <h3 className="text-lg font-medium">
+                  Complete Your Registration
+                </h3>
                 <p className="text-muted-foreground">
-                  Please enter your payment details to secure your spot.
+                  Please select your payment option and complete the payment.
                 </p>
+
+                {/* Payment Type Selection */}
+                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                  <Label className="text-base font-medium">
+                    Payment Option
+                  </Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="radio"
+                        id="full-payment"
+                        name="paymentType"
+                        value="full"
+                        checked={paymentType === "full"}
+                        onChange={(e) =>
+                          setPaymentType(e.target.value as "full" | "partial")
+                        }
+                        className="h-4 w-4"
+                      />
+                      <Label
+                        htmlFor="full-payment"
+                        className="cursor-pointer font-normal"
+                      >
+                        Full Payment - KES{" "}
+                        {events.find((e) => e.id === selectedEventId)?.price ||
+                          TICKET_TYPES[selectedTicket]}
+                      </Label>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          id="partial-payment"
+                          name="paymentType"
+                          value="partial"
+                          checked={paymentType === "partial"}
+                          onChange={(e) =>
+                            setPaymentType(e.target.value as "full" | "partial")
+                          }
+                          className="h-4 w-4"
+                        />
+                        <Label
+                          htmlFor="partial-payment"
+                          className="cursor-pointer font-normal"
+                        >
+                          Partial Payment (Pay Part Now)
+                        </Label>
+                      </div>
+
+                      {paymentType === "partial" && (
+                        <div className="ml-7 space-y-2">
+                          <Label htmlFor="partial-amount" className="text-sm">
+                            Enter Amount to Pay Now (KES)
+                          </Label>
+                          <Input
+                            id="partial-amount"
+                            type="number"
+                            min="1"
+                            max={
+                              events.find((e) => e.id === selectedEventId)
+                                ?.price || TICKET_TYPES[selectedTicket]
+                            }
+                            value={partialAmount}
+                            onChange={(e) => setPartialAmount(e.target.value)}
+                            placeholder="Enter amount"
+                            className="max-w-xs"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Total: KES{" "}
+                            {events.find((e) => e.id === selectedEventId)
+                              ?.price || TICKET_TYPES[selectedTicket]}
+                            {partialAmount && Number(partialAmount) > 0 && (
+                              <span className="block mt-1">
+                                Remaining: KES{" "}
+                                {(events.find((e) => e.id === selectedEventId)
+                                  ?.price || TICKET_TYPES[selectedTicket]) -
+                                  Number(partialAmount)}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <PaymentForm
                   email={formData.email}
-                  amount={TICKET_TYPES[selectedTicket]} // in kobo
+                  amount={
+                    paymentType === "partial" && partialAmount
+                      ? Number(partialAmount)
+                      : events.find((e) => e.id === selectedEventId)?.price ||
+                        TICKET_TYPES[selectedTicket]
+                  } // in kobo
                   onSuccess={handlePaymentSuccess}
                   metadata={{
                     registrationId,
@@ -377,6 +495,14 @@ export const RegistrationForm = () => {
                     ownerName: formData.ownerName,
                     phone: formData.phone,
                     email: formData.email,
+                    paymentType,
+                    totalAmount:
+                      events.find((e) => e.id === selectedEventId)?.price ||
+                      TICKET_TYPES[selectedTicket],
+                    partialAmount:
+                      paymentType === "partial"
+                        ? Number(partialAmount)
+                        : undefined,
                   }}
                 />
                 <Button
@@ -394,7 +520,8 @@ export const RegistrationForm = () => {
       </CardContent>
       <CardFooter className="bg-muted/50 p-4 border-t">
         <p className="text-sm text-muted-foreground text-center w-full">
-          Secure payment processing by Paystack. Your payment information is encrypted.
+          Secure payment processing by Paystack. Your payment information is
+          encrypted.
         </p>
       </CardFooter>
     </Card>

@@ -54,22 +54,51 @@ function paymentConfirmationTemplate({
   amount,
   registrationId,
   ticketNumber,
+  paymentType = "full",
+  totalAmount,
+  remainingBalance,
 }) {
+  const isPartial = paymentType === "partial" && remainingBalance > 0;
+
   return `
   <div style="${baseStyles.wrapper}">
     <div style="${baseStyles.card}">
-      <h1 style="${baseStyles.h1}; color:#138a36;">Payment Confirmed 🎉</h1>
+      <h1 style="${baseStyles.h1}; color:#138a36;">${
+    isPartial ? "Partial Payment Received" : "Payment Confirmed"
+  } 🎉</h1>
       <p style="font-size:15px;">Hi <strong>${firstName} ${lastName}</strong>,</p>
-      <p style="font-size:15px; line-height:1.5;">Your payment for <strong>${eventTitle}</strong> is successful. You're officially in!</p>
+      <p style="font-size:15px; line-height:1.5;">Your payment for <strong>${eventTitle}</strong> ${
+    isPartial ? "has been received" : "is successful. You're officially in"
+  }!</p>
       <div style="background:#e6f9ed; border:1px solid #c3efd5; padding:16px 20px; border-radius:8px; margin:24px 0;">
         <h2 style="margin:0 0 12px; font-size:16px; color:#0f6b28;">Ticket & Payment</h2>
+        ${
+          totalAmount
+            ? `<p style="margin:4px 0; font-size:14px;"><strong>Total Amount:</strong> KES ${totalAmount}</p>`
+            : ""
+        }
         <p style="margin:4px 0; font-size:14px;"><strong>Amount Paid:</strong> KES ${amount}</p>
+        ${
+          isPartial
+            ? `<p style="margin:4px 0; font-size:14px; color:#c27803;"><strong>Remaining Balance:</strong> KES ${remainingBalance}</p>`
+            : ""
+        }
         <p style="margin:4px 0; font-size:14px;"><strong>Ticket Number:</strong> ${ticketNumber}</p>
         <p style="margin:4px 0; font-size:14px;"><strong>Registration ID:</strong> ${registrationId}</p>
         <p style="margin:4px 0; font-size:14px;"><strong>Event Date:</strong> ${new Date(
           eventDate
         ).toLocaleDateString()}</p>
       </div>
+      ${
+        isPartial
+          ? `
+      <div style="background:#fff8e6; border:1px solid #f3dea7; padding:16px 20px; border-radius:8px; margin:24px 0;">
+        <p style="margin:0 0 8px; font-size:14px; color:#c27803;"><strong>⚠️ Balance Pending</strong></p>
+        <p style="margin:0; font-size:13px; color:#666;">Please complete the remaining payment of <strong>KES ${remainingBalance}</strong> to fully secure your spot. Contact us to arrange the balance payment.</p>
+      </div>
+      `
+          : ""
+      }
       <div style="background:#fff; border:2px dashed #138a36; padding:20px; border-radius:10px; text-align:center; margin:16px 0;">
         <p style="margin:0 0 8px; font-size:13px; letter-spacing:1px; color:#138a36; text-transform:uppercase;">Your Summit Ticket</p>
         <p style="margin:0; font-size:22px; font-weight:600; color:#138a36;">${ticketNumber}</p>

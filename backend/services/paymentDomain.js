@@ -72,7 +72,16 @@ export async function processSuccessfulPayment(reference, paystackData) {
       paystackData?.amount
     ) {
       const paidAmount = paystackData.amount / 100; // kobo -> KES
-      if (paidAmount !== registration.event.price) {
+      // For partial payments, just check if amount is less than or equal to total
+      if (registration.paymentType === "partial") {
+        if (paidAmount > registration.event.price) {
+          logger.warn("payment.amount_exceeds_total", {
+            total: registration.event.price,
+            actual: paidAmount,
+            reference,
+          });
+        }
+      } else if (paidAmount !== registration.event.price) {
         logger.warn("payment.amount_mismatch", {
           expected: registration.event.price,
           actual: paidAmount,
@@ -85,9 +94,18 @@ export async function processSuccessfulPayment(reference, paystackData) {
     const amountPaid = paystackData?.amount
       ? paystackData.amount / 100
       : registration.amountPaid;
+
+    // Calculate remaining balance
+    const newTotalPaid = (registration.amountPaid || 0) + amountPaid;
+    const remainingBalance =
+      (registration.totalAmount || registration.event?.price || 0) -
+      newTotalPaid;
+    const paymentStatus = remainingBalance <= 0 ? "paid" : "pending";
+
     await Registration.findByIdAndUpdate(registration._id, {
-      paymentStatus: "paid",
-      amountPaid,
+      paymentStatus,
+      amountPaid: newTotalPaid,
+      remainingBalance: Math.max(0, remainingBalance),
     });
 
     // Ensure ticket number exists
@@ -114,6 +132,9 @@ export async function processSuccessfulPayment(reference, paystackData) {
           amount: amountPaid,
           registrationId: registration._id,
           ticketNumber,
+          paymentType: registration.paymentType,
+          totalAmount: registration.totalAmount || registration.event?.price,
+          remainingBalance: Math.max(0, remainingBalance),
         });
         emailSent = !!emailRes?.success;
         if (!emailRes?.success) {

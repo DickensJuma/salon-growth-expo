@@ -27,9 +27,22 @@ const registrationSchema = new mongoose.Schema({
     // Index declared below using schema.index() to avoid duplicate warning
     sparse: true, // Still sparse so absent values don't bloat index
   },
+  totalAmount: {
+    type: Number,
+    default: 0,
+  },
   amountPaid: {
     type: Number,
     default: 0,
+  },
+  remainingBalance: {
+    type: Number,
+    default: 0,
+  },
+  paymentType: {
+    type: String,
+    enum: ["full", "partial"],
+    default: "full",
   },
   ticketNumber: {
     type: String,

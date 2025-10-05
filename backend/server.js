@@ -296,7 +296,10 @@ app.post(
             email: email.toLowerCase(),
             phoneNumber: phone,
           },
+          totalAmount: event.price,
           amountPaid: 0,
+          remainingBalance: event.price,
+          paymentType: "full",
           paymentStatus: "pending",
           registrationDate: new Date(),
           ticketSent: false,
@@ -383,12 +386,19 @@ app.post(
         .toString(36)
         .substr(2, 9)}`;
 
-      // If registrationId is provided, update the registration with payment reference
+      // If registrationId is provided, update the registration with payment reference and payment type
       if (registrationId) {
-        await Registration.findByIdAndUpdate(registrationId, {
+        const updateData = {
           paymentReference: paymentReference,
           paymentStatus: "pending",
-        });
+        };
+
+        // Update payment type if provided in metadata
+        if (metadata.paymentType) {
+          updateData.paymentType = metadata.paymentType;
+        }
+
+        await Registration.findByIdAndUpdate(registrationId, updateData);
       }
 
       // Initialize payment with Paystack
