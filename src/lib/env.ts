@@ -48,7 +48,7 @@ export const getPaystackSecretKey = (): string =>
   getEnv('PAYSTACK_SECRET_KEY');
 
 export const getBaseUrl = (): string =>
-  getEnv('NEXT_PUBLIC_BASE_URL', 'http://localhost:3000');
+  getEnv('NEXT_PUBLIC_BASE_URL', 'http://localhost:3001');
 
 /**
  * Validate that all required environment variables are set

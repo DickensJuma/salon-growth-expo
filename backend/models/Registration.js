@@ -31,6 +31,11 @@ const registrationSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  // Original (pre-discount) amount for audit/reference
+  originalAmount: {
+    type: Number,
+    default: 0,
+  },
   amountPaid: {
     type: Number,
     default: 0,
@@ -43,6 +48,13 @@ const registrationSchema = new mongoose.Schema({
     type: String,
     enum: ["full", "partial"],
     default: "full",
+  },
+  // Percentage discount actually applied and locked at registration time
+  appliedDiscountPercent: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100,
   },
   ticketNumber: {
     type: String,

@@ -40,7 +40,7 @@ const PaymentCallback: React.FC = () => {
       setStatus("verifying");
       setMessage("Verifying your payment...");
       try {
-        const response = await fetch("/api/payments/verify", {
+        const response = await fetch("https://api.salons-assured.com/api/payments/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ reference: paymentRef }),

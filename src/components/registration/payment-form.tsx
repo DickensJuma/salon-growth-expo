@@ -10,7 +10,9 @@ import { usePaystackPayment } from "@/hooks/usePaystackPayment";
 
 interface PaymentFormProps {
   email: string;
-  amount: number;
+  amount: number; // final payable (discounted)
+  originalAmount?: number; // pre-discount (for display)
+  discountPercent?: number; // applied discount percent
   onSuccess?: () => void;
   onError?: (error: Error) => void;
   metadata?: Record<string, any>;
@@ -20,6 +22,8 @@ interface PaymentFormProps {
 export function PaymentForm({
   email,
   amount,
+  originalAmount,
+  discountPercent,
   onSuccess,
   onError,
   metadata = {},
@@ -33,7 +37,7 @@ export function PaymentForm({
     usePaystackPayment({
       onSuccess: (reference: string) => {
         // Instead of navigating, just call the success callback
-        console.log('Payment successful, reference:', reference);
+        console.log("Payment successful, reference:", reference);
         onSuccess?.();
       },
       onClose: () => {
@@ -113,12 +117,37 @@ export function PaymentForm({
         </div>
 
         <div className="bg-muted p-4 rounded-lg space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="font-medium">Amount:</span>
-            <span className="text-lg font-bold">
-              KES {(amount).toLocaleString()}
-            </span>
-          </div>
+          {originalAmount && originalAmount > amount ? (
+            <>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Original Price</span>
+                <span className="line-through">
+                  KES {originalAmount.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">
+                  Discount{discountPercent ? ` (${discountPercent}%)` : ""}
+                </span>
+                <span className="text-green-600">
+                  - KES {(originalAmount - amount).toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-1 border-t mt-2">
+                <span className="font-medium">You Pay</span>
+                <span className="text-lg font-bold">
+                  KES {amount.toLocaleString()}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Amount</span>
+              <span className="text-lg font-bold">
+                KES {amount.toLocaleString()}
+              </span>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -139,7 +168,7 @@ export function PaymentForm({
               Processing...
             </>
           ) : (
-            `Pay KES ${(amount).toLocaleString()}`
+            `Pay KES ${amount.toLocaleString()}`
           )}
         </Button>
       </div>

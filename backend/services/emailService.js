@@ -94,7 +94,7 @@ async function generateTicketPDF(data) {
         .fontSize(8)
         .fillColor("#FFD700")
         .font("Helvetica")
-        .text("★ ELEVATE SUMMIT", 45, 55, { width: 150 });
+        .text("★ MANAGERS TRAINING", 45, 55, { width: 150 });
 
       // QR Code Section (center)
       if (qrDataURL) {
@@ -397,7 +397,7 @@ const FROM_ADDRESS =
   process.env.SMTP_FROM ||
   "support@salons-assured.com";
 //   "<support@salons-assured.com>"
-const BRAND = "Salons Assured Elevate Summit";
+const BRAND = "Managers Training - Operational Excellence 2026";
 
 async function sendRegistrationConfirmation(data) {
   try {

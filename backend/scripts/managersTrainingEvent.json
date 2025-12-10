@@ -1,0 +1,14 @@
+{
+  "title": "Managers Training",
+  "description": "Give your manager the skills to run your salon, barbershop, or spa with strong leadership, better systems, and improved daily operations in 2026. This training covers leadership & professionalism, staff discipline & communication, daily operations & reporting, 2026 client experience, sales & accountability, conflict management, and running the business when you're away.",
+  "date": "2026-01-05T08:00:00.000Z",
+  "startTime": "09:00",
+  "endTime": "17:00",
+  "location": "Salons Assured Offices",
+  "price": 12500,
+  "maxAttendees": 35,
+  "currentAttendees": 0,
+  "isActive": true,
+  "imageUrl": "/assets/salon-training-hero.jpg",
+  "category": "training"
+}

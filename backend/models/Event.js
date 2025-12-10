@@ -1,65 +1,76 @@
 // backend/models/Event.js
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const eventSchema = new mongoose.Schema({
   title: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   description: {
     type: String,
-    required: true
+    required: true,
   },
   date: {
     type: Date,
-    required: true
+    required: true,
   },
   startTime: {
     type: String,
-    required: true
+    required: true,
   },
   endTime: {
     type: String,
-    required: true
+    required: true,
   },
   location: {
     type: String,
-    required: true
+    required: true,
   },
   price: {
     type: Number,
     required: true,
-    min: 0
+    min: 0,
+  },
+  // Discount configuration (simple percentage-based)
+  discountActive: {
+    type: Boolean,
+    default: false,
+  },
+  discountPercent: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0,
   },
   maxAttendees: {
     type: Number,
-    required: true
+    required: true,
   },
   currentAttendees: {
     type: Number,
-    default: 0
+    default: 0,
   },
   isActive: {
     type: Boolean,
-    default: true
+    default: true,
   },
   imageUrl: {
-    type: String
+    type: String,
   },
   category: {
     type: String,
-    enum: ['workshop', 'seminar', 'conference', 'training', 'expo'],
-    default: 'workshop'
+    enum: ["workshop", "seminar", "conference", "training", "expo"],
+    default: "workshop",
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   updatedAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
-export default mongoose.model('Event', eventSchema);
+export default mongoose.model("Event", eventSchema);

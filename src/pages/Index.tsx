@@ -27,44 +27,44 @@ import salonWorkspaceImage from "@/assets/sak-2.jpg";
 import salonsAssuredLogo from "@/assets/Salons-Assured-logo.png";
 
 const Index = () => {
-  // Summit start date (countdown to day 1)
-  const eventDate = "2025-11-17T08:00:00";
+  // Event start date (countdown to event)
+  const eventDate = "2026-01-05T08:00:00";
 
   const trainingTopics = [
     {
       icon: Users,
-      title: "Staff Management",
-      description: "Build, inspire and retain high-performance beauty teams.",
-    },
-    {
-      icon: Smartphone,
-      title: "Social Media Marketing",
-      description: "Grow visibility, conversions & brand credibility online.",
+      title: "Leadership & Professionalism",
+      description: "Develop strong leadership skills and maintain professional standards in your salon, barbershop, or spa.",
     },
     {
       icon: Settings,
-      title: "Finance & Scaling",
-      description: "Pricing, profitability, expansion systems & cash control.",
-    },
-    {
-      icon: Heart,
-      title: "Client Experience 2026",
-      description: "Design unforgettable guest journeys that drive loyalty.",
-    },
-    {
-      icon: Sparkles,
-      title: "Goal Setting & Leadership",
-      description: "Operate as the CEO: strategy, accountability & execution.",
-    },
-    {
-      icon: Calendar,
-      title: "Tech Trends",
-      description: "Tools & platforms elevating modern salons & spas.",
+      title: "Staff Discipline & Communication",
+      description: "Learn effective communication strategies and discipline systems to manage your team successfully.",
     },
     {
       icon: CheckCircle,
-      title: "Networking & Growth",
-      description: "Collaborate, partner & accelerate sustainable expansion.",
+      title: "Daily Operations & Reporting",
+      description: "Master daily operational procedures and implement effective reporting systems.",
+    },
+    {
+      icon: Heart,
+      title: "2026 Client Experience",
+      description: "Design and deliver exceptional client experiences that drive loyalty and growth.",
+    },
+    {
+      icon: Sparkles,
+      title: "Sales & Accountability",
+      description: "Boost sales performance and establish accountability frameworks for your team.",
+    },
+    {
+      icon: Calendar,
+      title: "Conflict Management",
+      description: "Develop skills to handle conflicts professionally and maintain a positive work environment.",
+    },
+    {
+      icon: Smartphone,
+      title: "Running the Business When You're Away",
+      description: "Create systems and processes that allow your business to thrive even in your absence.",
     },
   ];
 
@@ -146,16 +146,15 @@ const Index = () => {
             />
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 gradient-text leading-tight drop-shadow-lg text-white">
-            Salons Assured Elevate Summit
+            Managers Training
           </h1>
           <p className="text-xl md:text-2xl mb-6 text-white/90 max-w-3xl mx-auto drop-shadow">
-            Salon, Barbershop & Spa Business Summit • 17–18 Nov 2025 • Glee
-            Hotel Nairobi
+            Operational Excellence 2026 • 5th January 2026 • Salons Assured Offices
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8 text-lg">
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-gold" />
-              <span className="font-semibold text-white">17–18 Nov 2025</span>
+              <span className="font-semibold text-white">5th January 2026</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-gold" />
@@ -163,7 +162,7 @@ const Index = () => {
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-gold" />
-              <span className="text-white/90">Glee Hotel • Nairobi</span>
+              <span className="text-white/90">Salons Assured Offices</span>
             </div>
           </div>
           <CountdownTimer targetDate={eventDate} className="mb-8" />
@@ -181,10 +180,10 @@ const Index = () => {
                 ?.scrollIntoView({ behavior: "smooth" })
             }
           >
-            Register Now – KES 40,000
+            Register Now – KES 12,500
           </Button>
           <p className="mt-4 text-white/80">
-            Includes meals • Certificate • Networking • Premium content
+            Limited to 35 slots • Certificate • Networking • Premium content
           </p>
         </div>
       </section>
@@ -194,18 +193,16 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-6 gradient-text">
-              Why Attend Elevate?
+              Why Attend Managers Training?
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Two immersive days of strategic insight, systems, leadership and
-              innovation tailored for owners & managers ready to scale
-              sustainably in 2025/26.
+              Give your manager the skills to run your salon, barbershop, or spa with strong leadership, better systems, and improved daily operations in 2026.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
             <div>
-              <h3 className="text-2xl font-bold mb-6">Core Summit Pillars</h3>
+              <h3 className="text-2xl font-bold mb-6">Training Topics</h3>
               <div className="space-y-6">
                 {trainingTopics.map((topic, index) => (
                   <div key={index} className="flex gap-4 items-start">
@@ -283,25 +280,29 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-6 gradient-text">
-              Secure Your Summit Pass
+              Secure Your Training Pass
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
               Investment:{" "}
-              <span className="font-semibold text-primary">KES 40,000</span>{" "}
-              (2-Day Pass) – Includes breakfast, lunch, 2 coffee breaks per day,
-              certificate, curated workbooks & premium networking.
+              <span className="font-semibold text-primary">KES 12,500</span>{" "}
+              (Taking only 35 slots) – Includes meals, certificate, networking & premium content.
+            </p>
+            <p className="text-lg font-semibold text-primary mb-6 max-w-2xl mx-auto">
+              Prepare your business for a stronger 2026.
             </p>
             <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto text-left mb-10">
               <div className="space-y-3">
                 <h4 className="font-semibold text-primary">
-                  What Your Pass Covers
+                  What You'll Learn
                 </h4>
                 <ul className="list-disc list-inside text-muted-foreground space-y-1 text-sm">
-                  <li>Breakfast, Lunch & 2 Coffee Breaks (Both Days)</li>
-                  <li>All Expert Speaker Sessions</li>
-                  <li>Leadership & Finance Frameworks</li>
-                  <li>Client Experience 2026 Blueprints</li>
-                  <li>Goal & Growth Planning Toolkit</li>
+                  <li>Leadership & Professionalism</li>
+                  <li>Staff Discipline & Communication</li>
+                  <li>Daily Operations & Reporting</li>
+                  <li>2026 Client Experience</li>
+                  <li>Sales & Accountability</li>
+                  <li>Conflict Management</li>
+                  <li>Running the Business When You're Away</li>
                 </ul>
               </div>
               <div className="space-y-3">

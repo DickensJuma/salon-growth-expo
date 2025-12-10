@@ -12,7 +12,7 @@ const baseStyles = {
 const footer = () => `
   <hr style="margin:40px 0 24px; border:none; border-top:1px solid #eee;" />
   <p style="font-size:12px; color:#666; text-align:center; line-height:1.4;">
-    Salons Assured Elevate Summit • Nairobi, Kenya<br/>
+    Managers Training - Operational Excellence 2026 • Salons Assured Kenya<br/>
     This is an automated email — please do not reply.<br/>
     © ${new Date().getFullYear()} Salons Assured. All rights reserved.
   </p>

@@ -86,7 +86,7 @@
 
 ```bash
 # Scan QR code to get ticket number, then:
-curl http://localhost:3000/api/tickets/verify/TICKET_XXXXX
+curl http://localhost:3001/api/tickets/verify/TICKET_XXXXX
 
 # Expected response:
 {
@@ -145,7 +145,7 @@ To see the improvements:
 4. **Verify ticket**:
    ```bash
    # Use ticket number from email
-   curl http://localhost:3000/api/tickets/verify/TICKET_XXXXX
+   curl http://localhost:3001/api/tickets/verify/TICKET_XXXXX
    ```
 
 ## 🐛 Troubleshooting

@@ -34,7 +34,7 @@ A modern web application for managing salon services, bookings, and payments wit
    NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=your_public_key_here
 
    # Application Configuration
-   NEXT_PUBLIC_BASE_URL=http://localhost:3000
+   NEXT_PUBLIC_BASE_URL=http://localhost:3001
    ```
 
 3. Get your Paystack API keys from the [Paystack Dashboard](https://dashboard.paystack.com/#/settings/developer)
@@ -57,15 +57,25 @@ A modern web application for managing salon services, bookings, and payments wit
    yarn dev
    ```
 
-3. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
 
 ## Environment Variables
 
-| Variable                          | Description                  | Required                            |
-| --------------------------------- | ---------------------------- | ----------------------------------- |
-| `PAYSTACK_SECRET_KEY`             | Your Paystack secret key     | Yes                                 |
-| `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | Your Paystack public key     | Yes                                 |
-| `NEXT_PUBLIC_BASE_URL`            | Base URL of your application | No (default: http://localhost:3000) |
+| Variable                          | Description                                                      | Required                                 |
+| --------------------------------- | ---------------------------------------------------------------- | ---------------------------------------- |
+| `PAYSTACK_SECRET_KEY`             | Your Paystack secret key                                         | Yes                                      |
+| `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | Your Paystack public key                                         | Yes                                      |
+| `NEXT_PUBLIC_BASE_URL`            | Base URL of your application                                     | No (default: http://localhost:3001)      |
+| `VITE_API_BASE_URL`               | Frontend API base for fetch calls (Vite)                         | No (falls back to http://localhost:3000) |
+| `ALLOWED_ORIGINS`                 | Comma-separated list of additional CORS origins                  | No                                       |
+| `STRICT_CORS`                     | If `true`, disallow requests without Origin header in production | No (default: false)                      |
+| `GLOBAL_DISCOUNT_ACTIVE`          | Enable a global percentage discount                              | No (default: false)                      |
+| `GLOBAL_DISCOUNT_PERCENT`         | Percentage value (0-100) for global discount                     | Required if above active                 |
+| `DISCOUNT_EFFECTIVE_AT`           | ISO timestamp at/after which configured discounts apply (non-retro) | No                                      |
+| `LOG_DISCOUNT`                    | If `true`, log discount computations for diagnostics              | No (default: false)                      |
+| `ALLOWED_ORIGINS_PATTERNS`        | Comma-separated wildcard origins (e.g. `*.example.com`)           | No                                      |
+| `ALLOW_LOCALHOST_IN_STRICT`       | Permit localhost even when `STRICT_CORS=true`                     | No (default: true)                       |
+| `ENABLE_CORS_DEBUG`               | If `true`, enable `/api/debug/cors` endpoint                      | No (default: false)                      |
 
 ## Deployment
 

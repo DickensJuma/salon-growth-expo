@@ -206,7 +206,7 @@ npm install
 
 ```bash
 # Register a new user
-curl -X POST http://localhost:3000/api/register \
+curl -X POST http://localhost:3001/api/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -225,7 +225,7 @@ curl -X POST http://localhost:3000/api/register \
 ```bash
 # Send 6 registration requests rapidly (should block 6th)
 for i in {1..6}; do
-  curl -X POST http://localhost:3000/api/register \
+  curl -X POST http://localhost:3001/api/register \
     -H "Content-Type: application/json" \
     -d '{"email":"test'$i'@example.com","firstName":"Test","lastName":"User","phone":"0700000000","eventId":"xxx"}'
 done
@@ -237,7 +237,7 @@ done
 
 ```bash
 # Send invalid email
-curl -X POST http://localhost:3000/api/register \
+curl -X POST http://localhost:3001/api/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "not-an-email",
@@ -253,7 +253,7 @@ curl -X POST http://localhost:3000/api/register \
 
 ```bash
 # Send webhook without valid signature
-curl -X POST http://localhost:3000/api/webhooks/paystack \
+curl -X POST http://localhost:3001/api/webhooks/paystack \
   -H "Content-Type: application/json" \
   -H "x-paystack-signature: invalid-signature" \
   -d '{"event":"charge.success","data":{"reference":"PAY_123"}}'

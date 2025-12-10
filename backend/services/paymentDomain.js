@@ -65,28 +65,27 @@ export async function processSuccessfulPayment(reference, paystackData) {
       };
     }
 
-    // Validate amount vs event price if available
-    if (
-      registration.event &&
-      registration.event.price &&
-      paystackData?.amount
-    ) {
-      const paidAmount = paystackData.amount / 100; // kobo -> KES
-      // For partial payments, just check if amount is less than or equal to total
+    // Validate amount vs discounted registration total (authoritative)
+    if (paystackData?.amount) {
+      const paidAmount = paystackData.amount / 100; // minor -> major
+      const authoritativeTotal =
+        registration.totalAmount || registration.event?.price;
       if (registration.paymentType === "partial") {
-        if (paidAmount > registration.event.price) {
+        if (paidAmount > authoritativeTotal) {
           logger.warn("payment.amount_exceeds_total", {
-            total: registration.event.price,
+            total: authoritativeTotal,
             actual: paidAmount,
             reference,
           });
         }
-      } else if (paidAmount !== registration.event.price) {
-        logger.warn("payment.amount_mismatch", {
-          expected: registration.event.price,
-          actual: paidAmount,
-          reference,
-        });
+      } else {
+        if (paidAmount !== authoritativeTotal) {
+          logger.warn("payment.amount_mismatch", {
+            expected: authoritativeTotal,
+            actual: paidAmount,
+            reference,
+          });
+        }
       }
     }
 
@@ -128,7 +127,7 @@ export async function processSuccessfulPayment(reference, paystackData) {
           lastName: registration.user.lastName,
           eventTitle: registration.event?.title,
           eventDate: registration.event?.date,
-          location: registration.event?.location || "Glee Hotel, Nairobi",
+          location: registration.event?.location || "Salons Assured Offices",
           amount: amountPaid,
           registrationId: registration._id,
           ticketNumber,

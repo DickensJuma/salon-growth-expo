@@ -13,7 +13,7 @@ This document outlines how to integrate Paystack payments into the Salon Growth 
    PAYSTACK_SECRET_KEY=your_secret_key_here
 
    # Base URL for callbacks
-   NEXT_PUBLIC_BASE_URL=http://localhost:3000
+   NEXT_PUBLIC_BASE_URL=http://localhost:3001
    ```
 
 2. **Install Dependencies**

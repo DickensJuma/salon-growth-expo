@@ -17,6 +17,7 @@ import Event from "./models/Event.js";
 import Registration from "./models/Registration.js";
 import { sendRegistrationConfirmation } from "./services/emailService.js";
 import { processSuccessfulPayment } from "./services/paymentDomain.js";
+import { computeDiscount } from "./utils/pricing.js";
 import { verifyTicket } from "./services/ticketService.js";
 import logger from "./utils/logger.js";
 import {
@@ -63,12 +64,21 @@ const connectDB = async () => {
 };
 
 // Middleware
-const allowedOrigins = [
+// Base allow-list (can be extended via env ALLOWED_ORIGINS)
+const allowedOriginsBase = [
   "http://localhost:5173",
   "http://localhost:3001",
+  "http://localhost:3002",
   "https://event.salons-assured.com",
   "https://www.event.salons-assured.com",
 ];
+const extraOrigins = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+const allowedOrigins = Array.from(
+  new Set([...allowedOriginsBase, ...extraOrigins])
+);
 
 // Security headers
 app.use(
@@ -89,40 +99,89 @@ app.use(
   })
 );
 
-// CORS configuration
+// Precompile wildcard patterns if provided (e.g. https://*.example.com)
+const wildcardPatterns = (process.env.ALLOWED_ORIGINS_PATTERNS || "")
+  .split(",")
+  .map((p) => p.trim())
+  .filter(Boolean)
+  .map((pattern) => {
+    // Escape regex special chars except * then replace * with .*
+    const regex = new RegExp(
+      "^" +
+        pattern
+          .replace(/[.+?^${}()|[\\]\\\\]/g, "\\$&")
+          .replace(/\\\*/g, ".*") +
+        "$",
+      "i"
+    );
+    return { pattern, regex };
+  });
+
+function originAllowed(origin, { isStrictProduction }) {
+  if (!origin) return !isStrictProduction; // allow null origins (curl / Postman) when not strict
+  if (allowedOrigins.includes(origin)) return true;
+  // localhost convenience
+  const isLocalhost = /^(https?:\/\/)?localhost:\d+$/i.test(origin);
+  if (isLocalhost) {
+    if (!isStrictProduction) return true;
+    if (process.env.ALLOW_LOCALHOST_IN_STRICT === "true") return true;
+  }
+  // wildcard patterns
+  for (const { regex } of wildcardPatterns) {
+    if (regex.test(origin)) return true;
+  }
+  return false;
+}
+
+const logCors = process.env.LOG_CORS === "true";
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (Postman, curl, mobile apps) when not in strict production
       const isStrictProduction =
         process.env.NODE_ENV === "production" &&
         process.env.STRICT_CORS === "true";
 
-      if (!origin && !isStrictProduction) {
-        // Allow in development or production without STRICT_CORS
+      const allowed = originAllowed(origin, { isStrictProduction });
+      if (allowed) {
+        if (logCors) {
+          logger.info("cors.allowed", {
+            origin: origin || "<none>",
+            strict: isStrictProduction,
+          });
+        }
         return callback(null, true);
       }
-
-      // In strict production mode, reject requests with no origin
-      if (!origin && isStrictProduction) {
-        logger.warn("cors.no_origin_rejected", { ip: "unknown" });
-        return callback(new Error("Origin required"));
+      if (logCors) {
+        logger.warn("cors.blocked", {
+          origin,
+          strict: isStrictProduction,
+          allowedOrigins,
+          wildcardPatterns: wildcardPatterns.map((w) => w.pattern),
+        });
       }
-
-      // Check if origin is in allowed list
-      if (origin && allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else if (origin) {
-        logger.warn("cors.origin_rejected", { origin });
-        callback(new Error("Not allowed by CORS"));
-      } else {
-        // Fallback - allow if no origin and not strict
-        callback(null, true);
-      }
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
   })
 );
+
+// Optional debug endpoint to inspect CORS config (disabled in production unless explicitly enabled)
+app.get("/api/debug/cors", (req, res) => {
+  if (
+    process.env.ENABLE_CORS_DEBUG === "true" ||
+    process.env.NODE_ENV !== "production"
+  ) {
+    res.json({
+      allowedOrigins,
+      wildcardPatterns: wildcardPatterns.map((w) => w.pattern),
+      strict: process.env.STRICT_CORS === "true",
+      allowLocalhostInStrict: process.env.ALLOW_LOCALHOST_IN_STRICT === "true",
+    });
+  } else {
+    res.status(404).json({ error: "Not found" });
+  }
+});
 
 // Body parser with size limits
 app.use(express.json({ limit: "10kb" }));
@@ -167,22 +226,53 @@ app.get(
 app.get("/api/events", async (req, res) => {
   try {
     const events = await Event.find({ isActive: true }).sort({ date: 1 });
+    const logDiscount = process.env.LOG_DISCOUNT === "true";
+    const effectiveAtRaw = process.env.DISCOUNT_EFFECTIVE_AT;
+    let effectiveAt = null;
+    if (effectiveAtRaw) {
+      const parsed = new Date(effectiveAtRaw);
+      if (!isNaN(parsed.getTime())) effectiveAt = parsed;
+    }
+    const now = new Date();
     res.json({
       success: true,
-      events: events.map((event) => ({
-        id: event._id,
-        title: event.title,
-        description: event.description,
-        date: event.date,
-        startTime: event.startTime,
-        endTime: event.endTime,
-        location: event.location,
-        price: event.price,
-        maxAttendees: event.maxAttendees,
-        currentAttendees: event.currentAttendees,
-        category: event.category,
-        imageUrl: event.imageUrl,
-      })),
+      events: events.map((event) => {
+        const d = computeDiscount(event);
+        const suppressed = d.discountPercent > 0 && effectiveAt && now < effectiveAt;
+        if (logDiscount && d.discountPercent > 0) {
+          logger.info("discount.event", {
+            eventId: event._id.toString(),
+            title: event.title,
+            discountPercent: d.discountPercent,
+            discountedPrice: d.discountedPrice,
+            originalPrice: d.originalPrice,
+            source: d.source,
+            effectiveAt: effectiveAt?.toISOString() || null,
+            suppressed,
+          });
+        }
+        return {
+          id: event._id,
+          title: event.title,
+          description: event.description,
+          date: event.date,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          location: event.location,
+          price: event.price, // original/base price
+          originalPrice: d.originalPrice,
+          discountPercent: d.discountPercent,
+          discountedPrice: d.discountedPrice,
+          discountAmount: d.discountAmount,
+          discountSource: d.source,
+          discountEffectiveAt: effectiveAt?.toISOString() || null,
+          discountSuppressed: suppressed,
+          maxAttendees: event.maxAttendees,
+          currentAttendees: event.currentAttendees,
+          category: event.category,
+          imageUrl: event.imageUrl,
+        };
+      }),
     });
   } catch (error) {
     logger.error("events.fetch_error", { error: error.message });
@@ -198,6 +288,15 @@ app.get("/api/events/:id", async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
+    const d = computeDiscount(event);
+    const effectiveAtRaw = process.env.DISCOUNT_EFFECTIVE_AT;
+    let effectiveAt = null;
+    if (effectiveAtRaw) {
+      const parsed = new Date(effectiveAtRaw);
+      if (!isNaN(parsed.getTime())) effectiveAt = parsed;
+    }
+    const now = new Date();
+    const suppressed = d.discountPercent > 0 && effectiveAt && now < effectiveAt;
     res.json({
       success: true,
       event: {
@@ -209,6 +308,13 @@ app.get("/api/events/:id", async (req, res) => {
         endTime: event.endTime,
         location: event.location,
         price: event.price,
+        originalPrice: d.originalPrice,
+        discountPercent: d.discountPercent,
+        discountedPrice: d.discountedPrice,
+        discountAmount: d.discountAmount,
+        discountSource: d.source,
+        discountEffectiveAt: effectiveAt?.toISOString() || null,
+        discountSuppressed: suppressed,
         maxAttendees: event.maxAttendees,
         currentAttendees: event.currentAttendees,
         category: event.category,
@@ -281,12 +387,63 @@ app.post(
         });
 
         if (existingRegistration) {
-          return res
-            .status(400)
-            .json({ message: "User already registered for this event" });
+          // Allow user to proceed if payment is not complete
+          if (
+            existingRegistration.paymentStatus === "pending" ||
+            (existingRegistration.paymentType === "partial" &&
+              existingRegistration.remainingBalance > 0)
+          ) {
+            return res.status(200).json({
+              success: true,
+              message: "User already registered, payment incomplete.",
+              registrationId: existingRegistration._id,
+              paymentStatus: existingRegistration.paymentStatus,
+              paymentType: existingRegistration.paymentType,
+              amountPaid: existingRegistration.amountPaid,
+              remainingBalance: existingRegistration.remainingBalance,
+              event: {
+                id: event._id,
+                title: event.title,
+                date: event.date,
+                price: event.price,
+              },
+              user: {
+                email,
+                firstName,
+                lastName,
+              },
+            });
+          } else {
+            // Block if fully paid
+            return res.status(400).json({
+              message: "User already registered and fully paid for this event",
+            });
+          }
         }
 
-        // Create registration
+        // Pricing & non-retroactive discount logic
+        // If DISCOUNT_EFFECTIVE_AT is set (ISO string), only apply discount for registrations at/after that timestamp.
+        // Earlier registrations keep full price (discount suppressed) to respect non-retro policy.
+        const effectiveAtRaw = process.env.DISCOUNT_EFFECTIVE_AT;
+        let effectiveAt = null;
+        if (effectiveAtRaw) {
+          const parsed = new Date(effectiveAtRaw);
+            if (!isNaN(parsed.getTime())) {
+              effectiveAt = parsed;
+            }
+        }
+
+        const now = new Date();
+        // Compute current discount potential (event or global)
+        const { originalPrice, discountPercent, discountedPrice, discountAmount, source } = computeDiscount(event);
+        const discountEligible = discountPercent > 0 && (!effectiveAt || now >= effectiveAt);
+        const discountSuppressed = discountPercent > 0 && effectiveAt && now < effectiveAt; // discount configured but not yet active for retro reasons
+
+        // Lock pricing (apply if eligible else full price)
+        const finalTotal = discountEligible ? discountedPrice : originalPrice;
+        const appliedPercent = discountEligible ? discountPercent : 0;
+
+        // Create registration with authoritative locked pricing
         let registration = new Registration({
           user: user._id,
           event: eventId,
@@ -296,15 +453,33 @@ app.post(
             email: email.toLowerCase(),
             phoneNumber: phone,
           },
-          totalAmount: event.price,
+          totalAmount: finalTotal,
+          originalAmount: originalPrice,
+          appliedDiscountPercent: appliedPercent,
           amountPaid: 0,
-          remainingBalance: event.price,
+          remainingBalance: finalTotal,
           paymentType: "full",
           paymentStatus: "pending",
-          registrationDate: new Date(),
+          registrationDate: now,
           ticketSent: false,
           confirmationSent: false,
         });
+
+        if (process.env.LOG_DISCOUNT === "true") {
+          logger.info("discount.registration.locked", {
+            registrationId: registration._id?.toString(),
+            eventId: event._id?.toString(),
+            email: email.toLowerCase(),
+            originalPrice,
+            finalTotal,
+            discountPercent: appliedPercent,
+            discountAmount: appliedPercent > 0 ? discountAmount : 0,
+            source,
+            effectiveAt: effectiveAt?.toISOString() || null,
+            discountEligible,
+            discountSuppressed,
+          });
+        }
 
         // Now generate ticket number using _id
         registration.ticketNumber = `TICKET_${registration._id
@@ -314,7 +489,7 @@ app.post(
 
         await registration.save();
 
-        // Send registration confirmation email (Salons Assured Elevate Summit branding)
+        // Send registration confirmation email (Managers Training - Operational Excellence 2026 branding)
         try {
           await sendRegistrationConfirmation({
             email: email.toLowerCase(),
@@ -343,6 +518,27 @@ app.post(
             title: event.title,
             date: event.date,
             price: event.price,
+            discount: {
+              originalPrice,
+              discountPercent,
+              discountedPrice,
+              discountAmount,
+              source,
+              effectiveAt: effectiveAt?.toISOString() || null,
+              suppressed: discountSuppressed,
+              appliedPercent,
+              finalTotal,
+            },
+          },
+          pricing: {
+            originalPrice,
+            finalTotal,
+            discountPercent: appliedPercent,
+            discountedPrice: finalTotal,
+            discountAmount: appliedPercent > 0 ? discountAmount : 0,
+            discountSuppressed,
+            effectiveAt: effectiveAt?.toISOString() || null,
+            discountEligible,
           },
         });
       }
@@ -388,6 +584,27 @@ app.post(
 
       // If registrationId is provided, update the registration with payment reference and payment type
       if (registrationId) {
+        const registration = await Registration.findById(
+          registrationId
+        ).populate("event");
+        if (!registration) {
+          return res.status(404).json({ message: "Registration not found" });
+        }
+
+        // Authoritative discounted total locked at registration time
+        const expectedTotal =
+          registration.totalAmount || registration.originalAmount || 0;
+        const expectedMinor = Math.round(expectedTotal * 100); // convert to minor unit for validation
+        const providedMinor = Math.round(amount); // client already sends minor units per existing code comment
+        if (providedMinor !== expectedMinor) {
+          return res.status(400).json({
+            success: false,
+            message: "Amount mismatch with registration discounted total",
+            expectedMinor,
+            providedMinor,
+          });
+        }
+
         const updateData = {
           paymentReference: paymentReference,
           paymentStatus: "pending",
@@ -413,7 +630,7 @@ app.post(
         callback_url:
           callbackUrl ||
           `${
-            process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+            process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001"
           }/payment/callback`,
         currency: "KES",
         channels: ["card", "bank", "mobile_money"],

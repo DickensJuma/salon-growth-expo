@@ -161,7 +161,7 @@ export const usePaystackPayment = (props?: UsePaystackPaymentProps) => {
     setError(null);
     
     try {
-      const response = await fetch('/api/paystack/verify', {
+      const response = await fetch('https://api.salons-assured.com/api/paystack/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -12,7 +12,7 @@ type ClientEnv = {
 // Default values for client-side environment variables
 const defaultEnv: ClientEnv = {
   NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY: '',
-  NEXT_PUBLIC_BASE_URL: 'http://localhost:3000',
+  NEXT_PUBLIC_BASE_URL: 'http://localhost:3001',
 };
 
 // Get client environment variables
@@ -28,16 +28,16 @@ export function getClientEnv(): ClientEnv {
         defaultEnv.NEXT_PUBLIC_BASE_URL,
     };
   }
-  
+
   // On the server, return the default values
   return defaultEnv;
 }
 
 // Individual getters for each environment variable
-export const getClientPaystackPublicKey = (): string => 
+export const getClientPaystackPublicKey = (): string =>
   getClientEnv().NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
 
-export const getClientBaseUrl = (): string => 
+export const getClientBaseUrl = (): string =>
   getClientEnv().NEXT_PUBLIC_BASE_URL;
 
 // Validate that all required client environment variables are set

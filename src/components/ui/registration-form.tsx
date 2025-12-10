@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, FC, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast"; // ✅ keep only one
 import {
   Card,
@@ -21,8 +21,14 @@ interface Event {
   title: string;
   description: string;
   date: string;
-  price: number;
+  price: number; // original/base price
   location: string;
+  originalPrice?: number;
+  discountPercent?: number;
+  discountedPrice?: number;
+  discountAmount?: number;
+  discountEffectiveAt?: string | null;
+  discountSuppressed?: boolean;
 }
 
 interface FormData {
@@ -43,12 +49,20 @@ export const RegistrationForm = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationId, setRegistrationId] = useState<string | null>(null);
-  const [selectedTicket, setSelectedTicket] = useState<
-    "standard" | "premium" | "vip"
-  >("standard");
+  const [lockedDiscountPercent, setLockedDiscountPercent] = useState<
+    number | null
+  >(null);
+  const [lockedOriginalAmount, setLockedOriginalAmount] = useState<
+    number | null
+  >(null);
+  const [lockedDiscountedAmount, setLockedDiscountedAmount] = useState<
+    number | null
+  >(null);
+  // Selected ticket retained for potential future tier pricing; currently single event pricing.
+  const selectedTicket: "standard" | "premium" | "vip" = "standard"; // static ticket type for current event model
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>("");
-  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const isLoadingEvents = false; // events fetch sets list; legacy state simplified
   const [paymentType, setPaymentType] = useState<"full" | "partial">("full");
   const [partialAmount, setPartialAmount] = useState<string>("");
   const [formData, setFormData] = useState<FormData>({
@@ -62,26 +76,51 @@ export const RegistrationForm = () => {
   // Fetch events on component mount
   useEffect(() => {
     const fetchEvents = async () => {
-      try {
-        const response = await fetch("/api/events");
-        const data = await response.json();
+      const base =
+        (import.meta as any).env?.VITE_API_BASE_URL ||
+        process.env.NEXT_PUBLIC_API_BASE_URL ||
+        process.env.VITE_API_BASE_URL ||
+        "http://localhost:3000"; // backend default
+      const url = `${base.replace(/\/$/, "")}/api/events`;
 
-        if (data.success && data.events.length > 0) {
-          setEvents(data.events);
-          setSelectedEventId(data.events[0].id); // Select first event by default
+      let attempts = 0;
+      const maxAttempts = 2;
+      while (attempts < maxAttempts) {
+        attempts++;
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 8000);
+          const response = await fetch(url, { signal: controller.signal });
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const data = await response.json();
+          if (data.success && data.events?.length > 0) {
+            setEvents(data.events);
+            setSelectedEventId(data.events[0].id);
+          }
+          return; // success exit
+        } catch (err: any) {
+          const isLast = attempts === maxAttempts;
+          // Heuristic for CORS vs network
+          if (isLast) {
+            console.error("Failed to fetch events:", err);
+            toast({
+              title: "Load Error",
+              description:
+                err?.name === "AbortError"
+                  ? "Fetching events timed out."
+                  : "Failed to load events. If this is CORS-related, ensure the frontend origin is allowed on the API server.",
+              variant: "destructive",
+            });
+          } else {
+            await new Promise((r) => setTimeout(r, 500));
+          }
         }
-      } catch (error) {
-        console.error("Failed to fetch events:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load available events.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingEvents(false);
       }
     };
-
     fetchEvents();
   }, [toast]);
 
@@ -155,15 +194,18 @@ export const RegistrationForm = () => {
         eventId: selectedEventId, // Include the selected event ID
       };
 
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(requestData),
-        signal: controller.signal,
-      });
+      const response = await fetch(
+        "https://api.salons-assured.com/api/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(requestData),
+          signal: controller.signal,
+        }
+      );
 
       clearTimeout(timeoutId);
 
@@ -183,6 +225,20 @@ export const RegistrationForm = () => {
         );
       }
       setRegistrationId(responseData.registrationId);
+      // Capture pricing lock from backend if present
+      if (responseData?.pricing) {
+        setLockedOriginalAmount(responseData.pricing.originalAmount ?? null);
+        setLockedDiscountedAmount(responseData.pricing.totalAmount ?? null);
+        setLockedDiscountPercent(
+          responseData.pricing.appliedDiscountPercent ?? null
+        );
+      } else if (responseData?.event?.discountedPrice) {
+        setLockedOriginalAmount(
+          responseData.event.originalPrice ?? responseData.event.price ?? null
+        );
+        setLockedDiscountedAmount(responseData.event.discountedPrice ?? null);
+        setLockedDiscountPercent(responseData.event.discountPercent ?? null);
+      }
       setActiveTab("payment");
 
       toast({
@@ -222,7 +278,7 @@ export const RegistrationForm = () => {
             <CheckCircle className="h-16 w-16 text-green-500" />
           </div>
           <p className="text-lg">
-            Thank you for registering for the Salon Growth Summit!
+            Thank you for registering for the Managers Training - Operational Excellence 2026!
           </p>
           <p>We've sent a confirmation email to {formData.email}.</p>
           <p>We look forward to seeing you at the event!</p>
@@ -234,7 +290,7 @@ export const RegistrationForm = () => {
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Register for the Business Summit</CardTitle>
+        <CardTitle>Register for Managers Training</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs
@@ -280,9 +336,21 @@ export const RegistrationForm = () => {
                     >
                       {events.map((event) => (
                         <option key={event.id} value={event.id}>
-                          {event.title} -{" "}
-                          {new Date(event.date).toLocaleDateString()} - KES{" "}
-                          {event.price}
+                          {event.title} - {event.title} -{" "}
+                          {new Date(event.date).toLocaleDateString()} -{" "}
+                          {(event.discountPercent && event.discountPercent > 0) ||
+                          (event.discountedPrice != null && event.discountedPrice < event.price) ? (
+                            <>
+                              <span className="line-through text-muted-foreground mr-1">
+                                KES {event.price}
+                              </span>
+                              <span className="text-green-600 font-medium">
+                                KES {event.discountedPrice ?? event.price}
+                              </span>
+                            </>
+                          ) : (
+                            <>KES {event.price}</>
+                          )}
                         </option>
                       ))}
                     </select>
@@ -297,11 +365,31 @@ export const RegistrationForm = () => {
                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <h3 className="font-medium text-blue-900">Selected Event</h3>
                   <p className="text-blue-700">
-                    {events[0]?.title} -{" "}
-                    {events[0]?.date
-                      ? new Date(events[0].date).toLocaleDateString()
-                      : ""}{" "}
-                    - KES {events[0]?.price || 0}
+                    <span>
+                      {events[0]?.title} -{" "}
+                      {events[0]?.date
+                        ? new Date(events[0].date).toLocaleDateString()
+                        : ""}{" "}
+                      -
+                    </span>
+                    {((events[0]?.discountPercent && events[0].discountPercent > 0) ||
+                      (events[0]?.discountedPrice != null &&
+                        events[0].discountedPrice < events[0].price)) &&
+                    !events[0]?.discountSuppressed ? (
+                      <span>
+                        <span className="line-through mr-1">
+                          KES {events[0].price}
+                        </span>
+                        <span className="text-green-700 font-semibold">
+                          KES {events[0].discountedPrice ?? events[0].price}
+                        </span>
+                        <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                          -{events[0].discountPercent}%
+                        </span>
+                      </span>
+                    ) : (
+                      <span>KES {events[0]?.price || 0}</span>
+                    )}
                   </p>
                 </div>
               )}
@@ -411,14 +499,39 @@ export const RegistrationForm = () => {
                           setPaymentType(e.target.value as "full" | "partial")
                         }
                         className="h-4 w-4"
+                        aria-label="Full payment option"
                       />
                       <Label
                         htmlFor="full-payment"
                         className="cursor-pointer font-normal"
                       >
-                        Full Payment - KES{" "}
-                        {events.find((e) => e.id === selectedEventId)?.price ||
-                          TICKET_TYPES[selectedTicket]}
+                        Full Payment - KES Full Payment -{" "}
+                        {lockedDiscountPercent &&
+                        lockedDiscountedAmount &&
+                        lockedOriginalAmount &&
+                        lockedDiscountPercent > 0 &&
+                        // Suppress discount display if backend indicates suppression
+                        !events.find((e) => e.id === selectedEventId)?.discountSuppressed ? (
+                          <span>
+                            <span className="line-through mr-1">
+                              KES {lockedOriginalAmount.toLocaleString()}
+                            </span>
+                            <span className="text-green-600 font-medium">
+                              KES {lockedDiscountedAmount.toLocaleString()}
+                            </span>
+                            <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                              -{lockedDiscountPercent}%
+                            </span>
+                          </span>
+                        ) : (
+                          <span>
+                            KES{" "}
+                            {(
+                              events.find((e) => e.id === selectedEventId)
+                                ?.price || TICKET_TYPES[selectedTicket]
+                            ).toLocaleString()}
+                          </span>
+                        )}
                       </Label>
                     </div>
 
@@ -434,6 +547,7 @@ export const RegistrationForm = () => {
                             setPaymentType(e.target.value as "full" | "partial")
                           }
                           className="h-4 w-4"
+                          aria-label="Partial payment option"
                         />
                         <Label
                           htmlFor="partial-payment"
@@ -448,28 +562,81 @@ export const RegistrationForm = () => {
                           <Label htmlFor="partial-amount" className="text-sm">
                             Enter Amount to Pay Now (KES)
                           </Label>
-                          <Input
-                            id="partial-amount"
-                            type="number"
-                            min="1"
-                            max={
-                              events.find((e) => e.id === selectedEventId)
-                                ?.price || TICKET_TYPES[selectedTicket]
-                            }
-                            value={partialAmount}
-                            onChange={(e) => setPartialAmount(e.target.value)}
-                            placeholder="Enter amount"
-                            className="max-w-xs"
-                          />
+                          <div className="space-y-1">
+                            <Input
+                              id="partial-amount"
+                              type="number"
+                              min="10000"
+                              max={
+                                events.find((e) => e.id === selectedEventId)
+                                  ?.price || TICKET_TYPES[selectedTicket]
+                              }
+                              value={partialAmount}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                const maxAmount =
+                                  events.find((e) => e.id === selectedEventId)
+                                    ?.price || TICKET_TYPES[selectedTicket];
+
+                                // Allow any input but validate on submission
+                                if (
+                                  value === "" ||
+                                  (Number(value) > 0 &&
+                                    Number(value) <= maxAmount)
+                                ) {
+                                  setPartialAmount(value);
+                                }
+                              }}
+                              placeholder="Minimum KES 10,000"
+                              className="max-w-xs"
+                            />
+                            {partialAmount &&
+                              Number(partialAmount) > 0 &&
+                              Number(partialAmount) < 10000 && (
+                                <p className="text-xs text-red-500 font-medium">
+                                  ⚠️ Amount must be at least KES 10,000
+                                </p>
+                              )}
+                            {partialAmount &&
+                              Number(partialAmount) >= 10000 && (
+                                <p className="text-xs text-green-600">
+                                  ✓ Valid partial payment amount
+                                </p>
+                              )}
+                          </div>
                           <p className="text-xs text-muted-foreground">
-                            Total: KES{" "}
-                            {events.find((e) => e.id === selectedEventId)
-                              ?.price || TICKET_TYPES[selectedTicket]}
+                            Total:{" "}
+                            {lockedDiscountedAmount &&
+                            lockedOriginalAmount &&
+                            lockedDiscountPercent &&
+                            lockedDiscountPercent > 0 &&
+                            !events.find((e) => e.id === selectedEventId)?.discountSuppressed ? (
+                              <span>
+                                <span className="line-through mr-1">
+                                  KES {lockedOriginalAmount.toLocaleString()}
+                                </span>
+                                <span className="text-green-600 font-medium">
+                                  KES {lockedDiscountedAmount.toLocaleString()}
+                                </span>
+                              </span>
+                            ) : (
+                              <span>
+                                KES{" "}
+                                {(
+                                  events.find((e) => e.id === selectedEventId)
+                                    ?.price || TICKET_TYPES[selectedTicket]
+                                ).toLocaleString()}
+                              </span>
+                            )}
                             {partialAmount && Number(partialAmount) > 0 && (
                               <span className="block mt-1">
                                 Remaining: KES{" "}
-                                {(events.find((e) => e.id === selectedEventId)
-                                  ?.price || TICKET_TYPES[selectedTicket]) -
+                                {(lockedDiscountedAmount ||
+                                  events.find((e) => e.id === selectedEventId)
+                                    ?.discountedPrice ||
+                                  events.find((e) => e.id === selectedEventId)
+                                    ?.price ||
+                                  TICKET_TYPES[selectedTicket]) -
                                   Number(partialAmount)}
                               </span>
                             )}
@@ -480,39 +647,71 @@ export const RegistrationForm = () => {
                   </div>
                 </div>
 
-                <PaymentForm
-                  email={formData.email}
-                  amount={
-                    paymentType === "partial" && partialAmount
-                      ? Number(partialAmount)
-                      : events.find((e) => e.id === selectedEventId)?.price ||
-                        TICKET_TYPES[selectedTicket]
-                  } // in kobo
-                  onSuccess={handlePaymentSuccess}
-                  metadata={{
-                    registrationId,
-                    businessName: formData.businessName,
-                    ownerName: formData.ownerName,
-                    phone: formData.phone,
-                    email: formData.email,
-                    paymentType,
-                    totalAmount:
+                <div className="space-y-4">
+                  {(() => {
+                    // Validate amount before showing payment form
+                    const basePrice =
+                      lockedDiscountedAmount ||
+                      events.find((e) => e.id === selectedEventId)
+                        ?.discountedPrice ||
                       events.find((e) => e.id === selectedEventId)?.price ||
-                      TICKET_TYPES[selectedTicket],
-                    partialAmount:
-                      paymentType === "partial"
+                      TICKET_TYPES[selectedTicket];
+                    const paymentAmount =
+                      paymentType === "partial" && partialAmount
                         ? Number(partialAmount)
-                        : undefined,
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full mt-4"
-                  onClick={() => setActiveTab("details")}
-                >
-                  Back to Details
-                </Button>
+                        : basePrice;
+
+                    const isValidAmount =
+                      paymentType === "full" ||
+                      (paymentType === "partial" &&
+                        Number(partialAmount) >= 10000);
+
+                    if (!isValidAmount && paymentType === "partial") {
+                      return (
+                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                          <p className="text-sm text-red-800 font-medium">
+                            Please enter a valid partial payment amount (minimum
+                            KES 10,000) to proceed.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <PaymentForm
+                        email={formData.email}
+                        amount={paymentAmount}
+                        originalAmount={lockedOriginalAmount || undefined}
+                        discountPercent={lockedDiscountPercent || undefined}
+                        onSuccess={handlePaymentSuccess}
+                        onError={(error) => {
+                          toast({
+                            title: "Payment Error",
+                            description:
+                              error.message ||
+                              "An error occurred during payment",
+                            variant: "destructive",
+                          });
+                        }}
+                        metadata={{
+                          registrationId,
+                          pricingLocked: true,
+                          originalAmount: lockedOriginalAmount,
+                          discountedAmount: lockedDiscountedAmount,
+                          discountPercent: lockedDiscountPercent,
+                        }}
+                      />
+                    );
+                  })()}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setActiveTab("details")}
+                  >
+                    Back to Details
+                  </Button>
+                </div>
               </div>
             )}
           </TabsContent>

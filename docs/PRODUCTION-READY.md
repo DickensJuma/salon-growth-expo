@@ -104,21 +104,21 @@ Your backend is now **production-ready** with all critical security vulnerabilit
 
 ### For Testing (Right Now)
 
-1. **Backend is running on:** `http://localhost:3000`
+1. **Backend is running on:** `http://localhost:3001`
 2. **Frontend is running on:** `http://localhost:3001`
-3. **Health check:** `http://localhost:3000/api/health`
+3. **Health check:** `http://localhost:3001/api/health`
 
 ### Test Endpoints
 
 ```bash
 # 1. Health Check
-curl http://localhost:3000/api/health
+curl http://localhost:3001/api/health
 
 # 2. Get Events
-curl http://localhost:3000/api/events
+curl http://localhost:3001/api/events
 
 # 3. Register (will be rate-limited after 5 attempts/hour)
-curl -X POST http://localhost:3000/api/register \
+curl -X POST http://localhost:3001/api/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -192,7 +192,7 @@ Update your frontend to use the backend URL:
 export const CONFIG = {
   API_BASE_URL: import.meta.env.PROD
     ? "https://your-backend.onrender.com" // Your Render URL
-    : "http://localhost:3000",
+    : "http://localhost:3001",
   SITE_URL: import.meta.env.PROD
     ? "https://event.salons-assured.com"
     : "http://localhost:5173",
@@ -263,7 +263,7 @@ NODE_ENV=production node server.js
 
 **Check:**
 
-1. Backend is running: `curl http://localhost:3000/api/health`
+1. Backend is running: `curl http://localhost:3001/api/health`
 2. Port is correct in `vite.config.ts` (should be 3000)
 3. No firewall blocking localhost connections
 
